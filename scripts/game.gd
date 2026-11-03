@@ -3,7 +3,6 @@ extends Node3D
 ## counts down the collapse timer, and hands out sarcastic achievements.
 
 const FLOOR := preload("res://assets/kaykit/dungeon/floor_tile_large.glb")
-const FLOOR_ROCKS := preload("res://assets/kaykit/dungeon/floor_tile_large_rocks.glb")
 const WALL := preload("res://assets/kaykit/dungeon/wall.glb")
 const WALL_PILLAR := preload("res://assets/kaykit/dungeon/wall_pillar.glb")
 const BARRIER := preload("res://assets/kaykit/dungeon/barrier.glb")
@@ -113,8 +112,7 @@ func _build_room() -> void:
 	for ix in count:
 		for iz in count:
 			var at := Vector3(-h + tile * (ix + 0.5), 0.0, -h + tile * (iz + 0.5))
-			var model := FLOOR_ROCKS if randf() < 0.12 else FLOOR
-			_add_model(model, at, randi_range(0, 3) * PI / 2.0)
+			_add_model(FLOOR, at, randi_range(0, 3) * PI / 2.0)
 
 	# Walls: tall on the far side and the flanks, a low barrier on the near side
 	# so the camera can see over it.

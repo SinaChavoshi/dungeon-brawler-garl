@@ -3,10 +3,10 @@ extends Node3D
 ## Orbiting follow camera. Drag with the left mouse button to rotate,
 ## scroll to zoom. Lives under the player, so it follows him around.
 
-@export var distance: float = 14.0
+@export var distance: float = 13.0
 @export var min_distance: float = 6.0
 @export var max_distance: float = 24.0
-@export var pitch_degrees: float = -50.0
+@export var pitch_degrees: float = -58.0
 @export var min_pitch: float = -80.0
 @export var max_pitch: float = -20.0
 @export var drag_sensitivity: float = 0.3
