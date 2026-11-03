@@ -1,0 +1,42 @@
+# Dungeon Brawler Garl
+
+A pantsless alien, a diva show skunk, and a dungeon broadcast live to the galaxy. Punch your way down collapsing floors, open loot boxes, and earn sarcastic achievements.
+
+An open-source, low-poly 3D roguelike built with [Godot 4](https://godotengine.org/). It's a learning-and-fun project.
+
+> **Status:** very early. Right now you can walk Garl around a test room.
+
+## Run it
+
+1. Install **Godot 4.3** or newer (the standard build; you don't need the .NET build).
+2. Clone this repo and open `project.godot` from the Godot project manager.
+3. Press **F5** to play.
+
+**Controls:** WASD or the arrow keys to move.
+
+## Project layout
+
+```
+project.godot      Godot project settings (GL Compatibility renderer, so web export works)
+scenes/            .tscn scenes: main.tscn is the test room, player.tscn is Garl
+scripts/           GDScript
+assets/            models, textures, audio (CC0 or original only)
+docs/              design notes. Start with docs/GAME_DESIGN.md
+```
+
+## Roadmap
+
+1. **Repo and skeleton**: done.
+2. **One-floor prototype**: an enemy, punching, stairs down, a Bronze loot box, the collapse timer.
+3. **Flavor pass**: H.O.S.T. achievement pop-ups, Duchess as a companion, viewer meter, safe room.
+4. **Polish and publish**: three floors, a title screen, web and desktop builds on itch.io.
+
+See [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) for the full pitch and cast.
+
+## A note on inspiration
+
+This is a fan homage inspired by dungeon-crawl LitRPG books. Every character, name, line of text and asset in this repo is original or CC0. Please don't contribute text, art or characters copied from any existing book or game.
+
+## License
+
+Code is licensed under the [Apache License 2.0](LICENSE). Third-party assets keep their own licenses, which are listed next to them in `assets/`.
