@@ -6,7 +6,12 @@ An open-source, low-poly 3D roguelike built with [Godot 4](https://godotengine.o
 
 > **Status:** very early. Right now you can walk Garl around a test room.
 
-## Run it
+## Play it
+
+- **In your browser:** https://sinachavoshi.github.io/dungeon-brawler-garl/ (rebuilt on every merge to `main`).
+- **On Windows:** open the latest [Build run](https://github.com/SinaChavoshi/dungeon-brawler-garl/actions/workflows/build.yml), download the `DungeonBrawlerGarl-windows` artifact, unzip it and run the `.exe`.
+
+## Run it from source
 
 1. Install **Godot 4.3** or newer (the standard build; you don't need the .NET build).
 2. Clone this repo and open `project.godot` from the Godot project manager.
