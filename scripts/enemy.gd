@@ -7,10 +7,10 @@ signal died
 
 @export var max_health: int = 3
 @export var move_speed: float = 3.0
-@export var aggro_range: float = 9.0
+@export var aggro_range: float = 7.0
 @export var attack_range: float = 1.3
 @export var attack_damage: int = 1
-@export var attack_cooldown: float = 1.0
+@export var attack_cooldown: float = 1.2
 
 var target: Player
 var health: int

@@ -41,5 +41,5 @@ mesh = SubResource("Mesh_boxers")
 surface_material_override/0 = SubResource("Mat_boxers")
 
 [node name="Camera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.642788, -0.766044, 0, 0.766044, 0.642788, 0, 10, 8.4)
+transform = Transform3D(1, 0, 0, 0, 0.642788, 0.766044, 0, -0.766044, 0.642788, 0, 10, 8.4)
 fov = 50.0
