@@ -1,6 +1,7 @@
 class_name Player
 extends CharacterBody3D
 ## Garl, our pantsless hero. Walks, punches, takes hits.
+## Left-drag orbits the camera, so punching lives on Space / J / right click.
 ##
 ## Only the Visuals node turns to face the movement direction. The body and
 ## the child camera stay unrotated, so the camera keeps its fixed angle.
@@ -23,7 +24,8 @@ var _punch_timer: float = 0.0
 var _hurt_timer: float = 0.0
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
-@onready var visuals: Node3D = $Visuals
+@onready var visuals: GarlModel = $Visuals
+@onready var camera_rig: CameraRig = $CameraRig
 
 
 func _ready() -> void:
@@ -41,6 +43,9 @@ func _physics_process(delta: float) -> void:
 	var direction := Vector3(input.x, 0.0, input.y)
 	if direction.length() > 1.0:
 		direction = direction.normalized()
+	# Move relative to where the camera is looking.
+	direction = direction.rotated(Vector3.UP, camera_rig.rotation.y)
+	visuals.set_walk_amount(direction.length())
 
 	velocity.x = direction.x * move_speed
 	velocity.z = direction.z * move_speed
@@ -61,9 +66,7 @@ func _physics_process(delta: float) -> void:
 
 func _punch() -> void:
 	_punch_timer = punch_cooldown
-	var tween := create_tween()
-	tween.tween_property(visuals, "scale", Vector3(1.25, 0.85, 1.25), 0.05)
-	tween.tween_property(visuals, "scale", Vector3.ONE, 0.12)
+	visuals.punch()
 
 	var facing := -visuals.global_transform.basis.z
 	facing.y = 0.0
@@ -85,6 +88,7 @@ func take_damage(amount: int) -> void:
 	health = maxi(health - amount, 0)
 	health_changed.emit(health, max_health)
 	damaged.emit()
+	camera_rig.shake(0.6)
 	if health == 0:
 		die("enemies")
 
@@ -99,6 +103,7 @@ func die(cause: String) -> void:
 		return
 	is_dead = true
 	velocity = Vector3.ZERO
+	visuals.set_walk_amount(0.0)
 	visuals.rotation.z = PI / 2.0  # flop over dramatically
 	died.emit(cause)
 
@@ -111,7 +116,7 @@ func reset_for_new_floor(spawn: Vector3) -> void:
 func _wants_punch() -> bool:
 	return Input.is_physical_key_pressed(KEY_SPACE) \
 		or Input.is_physical_key_pressed(KEY_J) \
-		or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+		or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 
 
 ## WASD or arrow keys. Returns x = right, y = toward the camera (+Z).
