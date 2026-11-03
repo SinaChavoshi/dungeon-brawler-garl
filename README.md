@@ -4,7 +4,7 @@ A pantsless alien, a diva show skunk, and a dungeon broadcast live to the galaxy
 
 An open-source, low-poly 3D roguelike built with [Godot 4](https://godotengine.org/). It's a learning-and-fun project.
 
-> **Status:** very early. Right now you can walk Garl around a test room.
+> **Status:** early prototype. Punch goblins, open loot boxes, and find the stairs before the floor collapses.
 
 ## Play it
 
@@ -17,7 +17,7 @@ An open-source, low-poly 3D roguelike built with [Godot 4](https://godotengine.o
 2. Clone this repo and open `project.godot` from the Godot project manager.
 3. Press **F5** to play.
 
-**Controls:** WASD or the arrow keys to move.
+**Controls:** WASD or arrow keys to move, Space / J / left click to punch, R to restart after dying.
 
 ## Project layout
 
