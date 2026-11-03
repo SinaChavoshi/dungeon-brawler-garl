@@ -6,7 +6,7 @@ const url = process.argv[2] ?? "http://localhost:8060/index.html";
 const browser = await chromium.launch({
   args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
 });
-const page = await browser.newPage();
+const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
 const problems = [];
 page.on("console", (msg) => {
   console.log(`[console.${msg.type()}] ${msg.text()}`);
@@ -28,7 +28,11 @@ const status = await page.evaluate(() => {
   return s ? { visible: getComputedStyle(s).visibility, text: s.innerText } : null;
 });
 console.log("status overlay:", JSON.stringify(status));
-await page.screenshot({ path: "web-smoke.png" });
+const shot = await page.screenshot({ type: "jpeg", quality: 60 });
+// Print the screenshot so it can be inspected straight from the CI log.
+console.log("SCREENSHOT_BASE64_BEGIN");
+console.log(shot.toString("base64"));
+console.log("SCREENSHOT_BASE64_END");
 await browser.close();
 
 if (status && status.visible !== "hidden" && status.text.trim()) {

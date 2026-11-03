@@ -24,6 +24,7 @@ func _ready() -> void:
 	player.health_changed.connect(hud.set_health)
 	hud.set_health(player.health, player.max_health)
 	_start_floor()
+	print("Game ready: floor %d, %d enemies" % [floor_number, get_tree().get_nodes_in_group("enemies").size()])
 
 
 func _process(delta: float) -> void:
