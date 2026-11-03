@@ -1,2 +1,4 @@
 # Normalize line endings for Godot text resources
 * text=auto eol=lf
+*.glb binary
+*.png binary

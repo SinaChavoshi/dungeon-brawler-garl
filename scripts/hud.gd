@@ -43,12 +43,12 @@ func _ready() -> void:
 	add_child(_center)
 
 	_controls.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	_controls.offset_left = -360
+	_controls.offset_left = -460
 	_controls.offset_right = -16
 	_controls.offset_top = 12
 	_controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_controls.add_theme_font_size_override("font_size", 16)
-	_controls.text = "WASD / arrows: move\nSpace / J / click: punch"
+	_controls.text = "WASD / arrows: move\nSpace / J / right click: punch\nLeft drag: rotate camera · Wheel: zoom"
 	add_child(_controls)
 
 

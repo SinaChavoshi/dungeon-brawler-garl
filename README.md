@@ -17,7 +17,7 @@ An open-source, low-poly 3D roguelike built with [Godot 4](https://godotengine.o
 2. Clone this repo and open `project.godot` from the Godot project manager.
 3. Press **F5** to play.
 
-**Controls:** WASD or arrow keys to move, Space / J / left click to punch, R to restart after dying.
+**Controls:** WASD or arrow keys to move, Space / J / right click to punch, left-drag to rotate the camera, mouse wheel to zoom, R to restart after dying.
 
 ## Project layout
 
@@ -45,3 +45,7 @@ This is a fan homage inspired by dungeon-crawl LitRPG books. Every character, na
 ## License
 
 Code is licensed under the [Apache License 2.0](LICENSE). Third-party assets keep their own licenses, which are listed next to them in `assets/`.
+
+## Credits
+
+- Dungeon and skeleton models: [KayKit](https://www.kaylousberg.com) by Kay Lousberg (CC0).
