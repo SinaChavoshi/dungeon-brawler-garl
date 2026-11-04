@@ -6,7 +6,7 @@ const url = process.argv[2] ?? "http://localhost:8060/index.html";
 const browser = await chromium.launch({
   args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
 });
-const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const problems = [];
 page.on("console", (msg) => {
   console.log(`[console.${msg.type()}] ${msg.text()}`);
@@ -37,7 +37,7 @@ async function dumpScreenshot(label) {
 }
 await dumpScreenshot("game");
 // Walk forward for a bit, then peek at the inventory and the map.
-await page.mouse.click(320, 180);
+await page.mouse.click(640, 360);
 await page.keyboard.down("KeyW");
 await page.waitForTimeout(2500);
 await page.keyboard.up("KeyW");

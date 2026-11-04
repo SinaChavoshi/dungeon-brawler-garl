@@ -139,17 +139,17 @@ func notify(title: String, body: String, color: Color = HOST_COLOR, seconds: flo
 	var heading := Label.new()
 	heading.text = title
 	heading.add_theme_color_override("font_color", color)
-	heading.add_theme_font_size_override("font_size", 14)
+	heading.add_theme_font_size_override("font_size", 13)
 	column.add_child(heading)
 	var text := Label.new()
 	text.text = body
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.custom_minimum_size = Vector2(500, 0)
-	text.add_theme_font_size_override("font_size", 17)
+	text.add_theme_font_size_override("font_size", 15)
 	column.add_child(text)
 
 	_feed.add_child(card)
-	while _feed.get_child_count() > 4:
+	while _feed.get_child_count() > 3:
 		var oldest := _feed.get_child(0)
 		_feed.remove_child(oldest)
 		oldest.queue_free()
