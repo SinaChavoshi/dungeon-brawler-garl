@@ -33,6 +33,7 @@ var _attack_anim: String = "Unarmed_Melee_Attack_Punch_A"
 
 func _ready() -> void:
 	add_to_group("enemies")
+	add_to_group("hittable")
 	health = max_health
 
 	var shape := CollisionShape3D.new()
@@ -114,6 +115,7 @@ func take_damage(amount: int, push_direction: Vector3) -> void:
 func _die() -> void:
 	is_dead = true
 	remove_from_group("enemies")
+	remove_from_group("hittable")
 	collision_layer = 0
 	collision_mask = 0
 	velocity = Vector3.ZERO

@@ -28,11 +28,28 @@ const status = await page.evaluate(() => {
   return s ? { visible: getComputedStyle(s).visibility, text: s.innerText } : null;
 });
 console.log("status overlay:", JSON.stringify(status));
-const shot = await page.screenshot({ type: "jpeg", quality: 60 });
-// Print the screenshot so it can be inspected straight from the CI log.
-console.log("SCREENSHOT_BASE64_BEGIN");
-console.log(shot.toString("base64"));
-console.log("SCREENSHOT_BASE64_END");
+// Print screenshots so they can be inspected straight from the CI log.
+async function dumpScreenshot(label) {
+  const shot = await page.screenshot({ type: "jpeg", quality: 60 });
+  console.log(`SCREENSHOT_BASE64_BEGIN ${label}`);
+  console.log(shot.toString("base64"));
+  console.log("SCREENSHOT_BASE64_END");
+}
+await dumpScreenshot("game");
+// Walk forward for a bit, then peek at the inventory and the map.
+await page.mouse.click(320, 180);
+await page.keyboard.down("KeyW");
+await page.waitForTimeout(2500);
+await page.keyboard.up("KeyW");
+await dumpScreenshot("walked");
+await page.keyboard.press("KeyI");
+await page.waitForTimeout(800);
+await dumpScreenshot("inventory");
+await page.keyboard.press("KeyI");
+await page.keyboard.press("KeyM");
+await page.waitForTimeout(800);
+await dumpScreenshot("map");
+await page.keyboard.press("KeyM");
 await browser.close();
 
 if (status && status.visible !== "hidden" && status.text.trim()) {

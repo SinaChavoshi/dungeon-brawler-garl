@@ -1,40 +1,30 @@
 extends Node3D
-## Runs the dungeon: builds each floor, spawns enemies, loot and stairs,
-## counts down the collapse timer, and hands out sarcastic achievements.
+## Runs the crawl: builds each floor, wires up Garl, Duchess, the inventory,
+## the HUD and the map, counts down the collapse timer, and hands out loot
+## and sarcastic achievements.
 
-const FLOOR := preload("res://assets/kaykit/dungeon/floor_tile_large.glb")
-const WALL := preload("res://assets/kaykit/dungeon/wall.glb")
-const WALL_PILLAR := preload("res://assets/kaykit/dungeon/wall_pillar.glb")
-const BARRIER := preload("res://assets/kaykit/dungeon/barrier.glb")
-const PILLAR := preload("res://assets/kaykit/dungeon/pillar.glb")
-const TORCH := preload("res://assets/kaykit/dungeon/torch_mounted.glb")
-const BANNERS := [
-	preload("res://assets/kaykit/dungeon/banner_patternA_red.glb"),
-	preload("res://assets/kaykit/dungeon/banner_patternB_blue.glb"),
-]
-## [model, collider size]
-const PROPS := [
-	[preload("res://assets/kaykit/dungeon/barrel_large.glb"), Vector3(1.6, 2.0, 1.6)],
-	[preload("res://assets/kaykit/dungeon/barrel_small_stack.glb"), Vector3(1.8, 1.8, 1.0)],
-	[preload("res://assets/kaykit/dungeon/crates_stacked.glb"), Vector3(2.0, 2.1, 2.0)],
-	[preload("res://assets/kaykit/dungeon/box_large.glb"), Vector3(1.5, 1.5, 1.5)],
-	[preload("res://assets/kaykit/dungeon/column.glb"), Vector3(0.8, 1.4, 0.8)],
-]
+const ACHIEVEMENT_COLOR := Color(0.75, 0.5, 1.0)
+const LOOT_COLOR := Color(0.4, 0.9, 1.0)
+const DUCHESS_COLOR := Color(1.0, 0.45, 0.8)
+const WARNING_COLOR := Color(1.0, 0.35, 0.3)
 
-@export var floor_time_seconds: float = 120.0
-@export var room_half_size: float = 12.0
+const BRONZE_LOOT := ["bandage", "bandage", "red_juice", "time_coupon", "lonely_sock", "brass_knuckles", "skunk_treat", "party_hat"]
+const GOLD_LOOT := ["utility_belt", "spiked_mitts", "red_juice", "skunk_treat"]
 
 var floor_number: int = 1
 var time_left: float = 0.0
 var game_over: bool = false
 var kills: int = 0
+var inventory := Inventory.new()
+var level: Level
 var _achievements: Dictionary = {}
 var _changing_floor: bool = false
-var _level: Node3D
-var _torches: Array[OmniLight3D] = []
+var _warned_time: bool = false
 
 @onready var player: Player = $Player
+@onready var duchess: Duchess = $Duchess
 @onready var hud: Hud = $HUD
+@onready var inventory_ui: InventoryUI = $InventoryUI
 
 
 func _ready() -> void:
@@ -43,7 +33,19 @@ func _ready() -> void:
 	player.damaged.connect(_on_player_damaged)
 	player.health_changed.connect(hud.set_health)
 	hud.set_health(player.health, player.max_health)
+
+	duchess.leader = player
+	duchess.quip.connect(_on_duchess_quip)
+	duchess.sprayed_first_time.connect(_on_duchess_first_spray)
+
+	inventory.changed.connect(_on_inventory_changed)
+	inventory_ui.setup(inventory)
+	inventory_ui.use_requested.connect(_use_item)
+	inventory_ui.equip_requested.connect(inventory.equip)
+	inventory_ui.unequip_requested.connect(inventory.unequip)
+
 	_start_floor()
+	hud.notify("DUCHESS", "Garl, darling, the cameras are rolling. Do try to look heroic. And for heaven's sake, put on some pants.", DUCHESS_COLOR)
 	print("Game ready: floor %d, %d enemies" % [floor_number, get_tree().get_nodes_in_group("enemies").size()])
 
 
@@ -53,192 +55,136 @@ func _process(delta: float) -> void:
 			get_tree().reload_current_scene()
 		return
 
-	for torch in _torches:
-		torch.light_energy = 1.5 + sin(Time.get_ticks_msec() / 90.0 + torch.position.x) * 0.15 + randf() * 0.1
 	time_left -= delta
 	hud.set_time(time_left)
+	if time_left <= 30.0 and not _warned_time:
+		_warned_time = true
+		hud.notify("WARNING", "Floor collapse in 30 seconds. H.O.S.T. recommends finding the stairs, or at least looking busy.", WARNING_COLOR)
 	if time_left <= 0.0:
 		player.die("collapse")
+	if level != null:
+		level.reveal_around(player.global_position, 7.0)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	var key_event := event as InputEventKey
+	if key_event == null or not key_event.pressed or key_event.echo or game_over:
+		return
+	if key_event.physical_keycode == KEY_M:
+		hud.toggle_full_map()
+	elif key_event.physical_keycode == KEY_Q:
+		_quick_heal()
 
 
 func _start_floor() -> void:
 	_changing_floor = false
-	if _level != null:
-		_level.queue_free()
-	_level = Node3D.new()
-	_level.name = "Level"
-	add_child(_level)
+	_warned_time = false
+	if level != null:
+		level.queue_free()
+	level = TutorialLevel.new() if floor_number == 1 else ArenaLevel.new()
+	level.name = "Level%d" % floor_number
+	level.floor_number = floor_number
+	level.player = player
+	add_child(level)
+	level.build()
+	level.stairs_reached.connect(_on_stairs_reached)
+	level.enemy_died.connect(_on_enemy_died)
+	level.chest_opened.connect(_on_chest_opened)
+	level.announce.connect(_on_level_announce)
 
-	_build_room()
-	var spawn := Vector3(0.0, 0.1, room_half_size - 3.0)
-	player.reset_for_new_floor(spawn)
-
-	for _i in 2 + floor_number:
-		var enemy := Enemy.new()
-		enemy.target = player
-		enemy.max_health = 2 + floor_number
-		enemy.move_speed = 2.5 + 0.25 * floor_number
-		enemy.position = _random_spot(spawn, 7.0)
-		enemy.died.connect(_on_enemy_died)
-		_level.add_child(enemy)
-
-	for _i in randi_range(1, 2):
-		var box := LootBox.new()
-		if randf() < 0.15 + 0.05 * floor_number:
-			box.tier = "Gold"
-		box.position = _random_spot(spawn, 4.0)
-		box.opened.connect(_on_loot_opened)
-		_level.add_child(box)
-
-	var stairs := Stairs.new()
-	stairs.position = Vector3(randf_range(-room_half_size + 4.0, room_half_size - 4.0), 0.0, -room_half_size + 3.5)
-	stairs.reached.connect(_on_stairs_reached)
-	_level.add_child(stairs)
-
-	time_left = floor_time_seconds
+	player.reset_for_new_floor(level.player_spawn)
+	duchess.global_position = level.player_spawn + Vector3(1.2, 0.0, 1.0)
+	time_left = level.time_limit
 	hud.set_floor(floor_number)
 	hud.set_time(time_left)
-	hud.announce("H.O.S.T.: Welcome to Floor %d! The stairs are somewhere. Probably." % floor_number)
-
-
-func _build_room() -> void:
-	_torches.clear()
-	var h := room_half_size
-	var tile := 4.0
-	var count := int(round(h * 2.0 / tile))
-
-	# Floor: one big collider, KayKit tiles on top.
-	_add_collider(Vector3(h * 2.0, 1.0, h * 2.0), Vector3(0.0, -0.5, 0.0))
-	for ix in count:
-		for iz in count:
-			var at := Vector3(-h + tile * (ix + 0.5), 0.0, -h + tile * (iz + 0.5))
-			_add_model(FLOOR, at, randi_range(0, 3) * PI / 2.0)
-
-	# Walls: tall on the far side and the flanks, a low barrier on the near side
-	# so the camera can see over it.
-	for i in count:
-		var along := -h + tile * (i + 0.5)
-		_add_model(WALL_PILLAR if i % 2 == 1 else WALL, Vector3(along, 0.0, -h - 0.5), 0.0)
-		_add_model(WALL, Vector3(-h - 0.5, 0.0, along), PI / 2.0)
-		_add_model(WALL, Vector3(h + 0.5, 0.0, along), PI / 2.0)
-		_add_model(BARRIER, Vector3(along, 0.0, h + 0.3), 0.0)
-	for corner in [Vector3(-h - 0.5, 0, -h - 0.5), Vector3(h + 0.5, 0, -h - 0.5)]:
-		_add_model(PILLAR, corner, 0.0)
-	_add_collider(Vector3(h * 2.0 + 2.0, 4.0, 1.0), Vector3(0.0, 2.0, -h - 0.5))
-	_add_collider(Vector3(h * 2.0 + 2.0, 4.0, 1.0), Vector3(0.0, 2.0, h + 0.5))
-	_add_collider(Vector3(1.0, 4.0, h * 2.0), Vector3(-h - 0.5, 2.0, 0.0))
-	_add_collider(Vector3(1.0, 4.0, h * 2.0), Vector3(h + 0.5, 2.0, 0.0))
-
-	# Torches and banners on the back wall, torches on the side walls.
-	for i in count:
-		var along := -h + tile * (i + 0.5)
-		if i % 2 == 0:
-			_add_torch(Vector3(along, 2.2, -h), 0.0)
-		else:
-			_add_model(BANNERS[randi() % BANNERS.size()], Vector3(along, 0.0, -h - 0.5), 0.0)
-	for z in [-h * 0.4, h * 0.4]:
-		_add_torch(Vector3(-h, 2.2, z), PI / 2.0)
-		_add_torch(Vector3(h, 2.2, z), -PI / 2.0)
-
-	# Clutter along the walls (with simple colliders so you bump into it).
-	for _i in 7:
-		var prop: Array = PROPS[randi() % PROPS.size()]
-		var side := randi() % 3
-		var along := randf_range(-h + 2.0, h - 2.0)
-		var at := Vector3(along, 0.0, -h + 1.5)
-		if side == 1:
-			at = Vector3(-h + 1.5, 0.0, along)
-		elif side == 2:
-			at = Vector3(h - 1.5, 0.0, along)
-		_add_model(prop[0], at, randf() * TAU)
-		_add_collider(prop[1], at + Vector3(0.0, prop[1].y / 2.0, 0.0))
-
-	# A couple of pillars in the middle to dodge around.
-	for _i in 2:
-		var at := _random_spot(Vector3(0.0, 0.0, h - 3.0), 6.0)
-		at.x = clampf(at.x, -h + 4.0, h - 4.0)
-		at.z = clampf(at.z, -h + 5.0, h - 5.0)
-		_add_model(PILLAR, at, 0.0)
-		_add_collider(Vector3(1.5, 4.0, 1.5), at + Vector3(0.0, 2.0, 0.0))
-
-
-func _add_model(scene: PackedScene, at: Vector3, yaw: float) -> Node3D:
-	var model := scene.instantiate() as Node3D
-	model.position = at
-	model.rotation.y = yaw
-	_level.add_child(model)
-	return model
-
-
-func _add_collider(size: Vector3, at: Vector3) -> void:
-	var body := StaticBody3D.new()
-	body.position = at
-	var shape := CollisionShape3D.new()
-	var box_shape := BoxShape3D.new()
-	box_shape.size = size
-	shape.shape = box_shape
-	body.add_child(shape)
-	_level.add_child(body)
-
-
-func _add_torch(at: Vector3, yaw: float) -> void:
-	_add_model(TORCH, at, yaw)
-	var light := OmniLight3D.new()
-	light.light_color = Color(1.0, 0.6, 0.25)
-	light.light_energy = 1.6
-	light.omni_range = 8.0
-	light.position = at + Vector3(sin(yaw), 0.0, cos(yaw)) * 0.9 + Vector3(0.0, 0.5, 0.0)
-	_level.add_child(light)
-	_torches.append(light)
-
-
-func _random_spot(away_from: Vector3, min_distance: float) -> Vector3:
-	var limit := room_half_size - 2.0
-	var spot := Vector3.ZERO
-	for _attempt in 30:
-		spot = Vector3(randf_range(-limit, limit), 0.0, randf_range(-limit, limit))
-		if spot.distance_to(away_from) >= min_distance:
-			break
-	return spot
+	hud.set_level(level, player)
+	hud.notify(level.intro_title, level.intro_text, Color(1.0, 0.6, 0.2), 7.0)
 
 
 func _award(id: String, text: String) -> void:
 	if _achievements.has(id):
 		return
 	_achievements[id] = true
-	hud.announce("New Achievement! " + text)
+	hud.notify("NEW ACHIEVEMENT!", text, ACHIEVEMENT_COLOR)
 
 
-func _on_enemy_died() -> void:
+# --- Inventory -------------------------------------------------------------
+
+func _on_inventory_changed() -> void:
+	player.apply_bonuses(inventory.bonuses())
+	hud.set_gold(inventory.gold)
+
+
+func _use_item(id: String) -> void:
+	var item := Items.info(id)
+	if item.get("kind", "") != "consumable" or inventory.count_of(id) == 0:
+		return
+	if item.has("heal"):
+		if player.health >= player.max_health:
+			hud.notify("H.O.S.T.", "You're already at full health. H.O.S.T. admires your commitment to waste, but no.")
+			return
+		player.heal(item["heal"])
+	if item.has("time"):
+		time_left += item["time"]
+	if item.has("spray_boost"):
+		duchess.boost_time = item["spray_boost"]
+		hud.notify("DUCHESS", "Is that... gourmet? Fine. FINE. Stand back, everyone.", DUCHESS_COLOR)
+	inventory.remove(id)
+	hud.notify("ITEM USED", "%s. %s" % [Items.display_name(id), Items.effect_text(id)], LOOT_COLOR, 3.0)
+
+
+func _quick_heal() -> void:
+	var id := inventory.best_heal()
+	if id == "":
+		hud.notify("H.O.S.T.", "No healing items. H.O.S.T. suggests the classic strategy of 'not getting hit'.")
+		return
+	_use_item(id)
+
+
+func _on_chest_opened(box: LootBox) -> void:
+	_award("first_box", "Unboxing Influencer. You opened a loot box on live television. The algorithm is pleased.")
+	var id := box.contents
+	if id == "":
+		var table: Array = GOLD_LOOT if box.tier == "Gold" else BRONZE_LOOT
+		id = table[randi() % table.size()]
+	var gold := randi_range(20, 40) if box.tier == "Gold" else randi_range(3, 10)
+	inventory.add_gold(gold)
+	if not inventory.add(id):
+		hud.notify("INVENTORY FULL", "You found %s, but your bag is full. H.O.S.T. has disposed of it for you. You're welcome." % Items.display_name(id), WARNING_COLOR)
+		return
+	hud.notify("%s BOX OPENED" % box.tier.to_upper(),
+		"You received: %s (+%d gold).\n%s" % [Items.display_name(id), gold, Items.info(id).get("desc", "")], LOOT_COLOR, 7.0)
+	if Items.info(id).get("kind", "") == "equipment" and not inventory.equipped.has(Items.info(id)["slot"]):
+		hud.notify("H.O.S.T.", "Tip: press I to open your inventory and equip that. Or don't. It's your funeral, and it's televised.")
+
+
+# --- Events ----------------------------------------------------------------
+
+func _on_enemy_died(_enemy: Enemy) -> void:
 	kills += 1
-	_award("first_kill", "First Blood (Not Yours). Reward: the crowd's mild interest.")
+	inventory.add_gold(randi_range(1, 4))
+	if randf() < 0.15:
+		inventory.add("bone_fragment")
+	duchess.on_enemy_killed()
+	_award("first_kill", "First Blood (Not Yours). You destroyed a skeleton. It was already dead, so legally this is fine.")
 	if kills == 10:
-		_award("ten_kills", "Knuckle Sandwich Franchise. Ten goblins served.")
+		_award("ten_kills", "Knuckle Sandwich Franchise. Ten skeletons served.")
+
+
+func _on_level_announce(title: String, body: String) -> void:
+	hud.notify(title, body)
+
+
+func _on_duchess_quip(text: String) -> void:
+	hud.notify("DUCHESS", text.trim_prefix("Duchess: "), DUCHESS_COLOR)
+
+
+func _on_duchess_first_spray() -> void:
+	_award("royal_spray", "Smells Like Royalty. Duchess used Royal Spray. Everyone within ten meters now regrets it.")
 
 
 func _on_player_damaged() -> void:
 	_award("first_hurt", "Ow. You have discovered pain. The viewers love it.")
-
-
-func _on_loot_opened(box: LootBox) -> void:
-	_award("first_box", "Unboxing Influencer. You opened a box on camera.")
-	if box.tier == "Gold":
-		player.max_health += 2
-		player.heal(player.max_health)
-		hud.announce("Gold Box: a sparkly utility belt. +2 max HP and a full heal. Sponsors are watching.")
-		return
-	match randi_range(0, 3):
-		0:
-			player.heal(3)
-			hud.announce("%s Box: a slightly used bandage. +3 HP." % box.tier)
-		1:
-			player.punch_damage += 1
-			hud.announce("%s Box: brass knuckles of questionable origin. +1 punch damage." % box.tier)
-		2:
-			time_left += 20.0
-			hud.announce("%s Box: a coupon for 20 more seconds of not dying." % box.tier)
-		_:
-			hud.announce("%s Box: a single sock. It does not match the one you have." % box.tier)
 
 
 func _on_stairs_reached() -> void:
@@ -247,6 +193,8 @@ func _on_stairs_reached() -> void:
 	_changing_floor = true
 	if get_tree().get_nodes_in_group("enemies").is_empty():
 		_award("floor_%d_clear" % floor_number, "Exterminator. You cleared Floor %d. Show-off." % floor_number)
+	if floor_number == 1:
+		_award("tutorial", "Graduate. You survived the tutorial. Most do. Some don't. We don't talk about those.")
 	floor_number += 1
 	call_deferred("_start_floor")
 

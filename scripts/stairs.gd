@@ -8,6 +8,7 @@ const GRATE := preload("res://assets/kaykit/dungeon/floor_tile_big_grate_open.gl
 
 
 func _ready() -> void:
+	add_to_group("stairs")
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
 	box_shape.size = Vector3(2.4, 1.0, 2.4)
