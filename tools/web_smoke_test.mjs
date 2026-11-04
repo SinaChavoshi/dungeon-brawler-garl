@@ -31,8 +31,10 @@ console.log("status overlay:", JSON.stringify(status));
 // Print screenshots so they can be inspected straight from the CI log.
 async function dumpScreenshot(label) {
   const shot = await page.screenshot({ type: "jpeg", quality: 60 });
+  // Chunked lines: very long log lines get cut off.
+  const data = shot.toString("base64");
   console.log(`SCREENSHOT_BASE64_BEGIN ${label}`);
-  console.log(shot.toString("base64"));
+  for (let i = 0; i < data.length; i += 4000) console.log(data.slice(i, i + 4000));
   console.log("SCREENSHOT_BASE64_END");
 }
 await dumpScreenshot("game");
@@ -57,6 +59,8 @@ if (status && status.visible !== "hidden" && status.text.trim()) {
 }
 if (problems.length) {
   console.log(`::error::Web build has ${problems.length} problem(s)`);
-  process.exit(1);
+  // exitCode instead of exit() so buffered stdout (the screenshots) still flushes.
+  process.exitCode = 1;
+} else {
+  console.log("Web build started cleanly.");
 }
-console.log("Web build started cleanly.");

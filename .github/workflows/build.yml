@@ -53,11 +53,15 @@ jobs:
 
       - name: Smoke test the web build in headless Chromium
         run: |
-          npm install --no-save playwright@1.48.2
-          npx playwright install --with-deps chromium
+          # Install Playwright outside the Godot project so its files don't get
+          # imported into the game.
+          smoke="$RUNNER_TEMP/smoke"
+          mkdir -p "$smoke"
+          cp tools/web_smoke_test.mjs "$smoke/"
+          (cd "$smoke" && npm init -y >/dev/null && npm install playwright@1.48.2 && npx playwright install --with-deps chromium)
           (cd build/web && python3 -m http.server 8060 >/dev/null 2>&1 &)
           sleep 2
-          node tools/web_smoke_test.mjs http://localhost:8060/index.html
+          node "$smoke/web_smoke_test.mjs" http://localhost:8060/index.html
 
       - name: Export Windows build
         run: |
