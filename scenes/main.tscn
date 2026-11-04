@@ -1,8 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="3_hud"]
+[ext_resource type="Script" path="res://scripts/duchess.gd" id="4_duchess"]
+[ext_resource type="Script" path="res://scripts/inventory_ui.gd" id="5_inventory"]
 
 [sub_resource type="Environment" id="Env_main"]
 background_mode = 1
@@ -29,5 +31,11 @@ shadow_enabled = true
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
 
+[node name="Duchess" type="CharacterBody3D" parent="."]
+script = ExtResource("4_duchess")
+
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("3_hud")
+
+[node name="InventoryUI" type="CanvasLayer" parent="."]
+script = ExtResource("5_inventory")

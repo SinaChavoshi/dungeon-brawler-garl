@@ -1,6 +1,6 @@
 class_name CameraRig
 extends Node3D
-## Orbiting follow camera. Drag with the left mouse button to rotate,
+## Orbiting follow camera. Drag with the right mouse button to rotate,
 ## scroll to zoom. Lives under the player, so it follows him around.
 
 @export var distance: float = 13.0
@@ -24,7 +24,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var button := event as InputEventMouseButton
-		if button.button_index == MOUSE_BUTTON_LEFT:
+		if button.button_index == MOUSE_BUTTON_RIGHT:
 			_dragging = button.pressed
 		elif button.button_index == MOUSE_BUTTON_WHEEL_UP and button.pressed:
 			distance = maxf(min_distance, distance - 1.0)

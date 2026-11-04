@@ -1,7 +1,7 @@
 class_name Player
 extends CharacterBody3D
 ## Garl, our pantsless hero. Walks, punches, takes hits.
-## Left-drag orbits the camera, so punching lives on Space / J / right click.
+## Right-drag orbits the camera; punch with left click, Space or J.
 ##
 ## Only the Visuals node turns to face the movement direction. The body and
 ## the child camera stay unrotated, so the camera keeps its fixed angle.
@@ -14,11 +14,14 @@ signal died(cause: String)
 @export var turn_speed: float = 12.0
 @export var max_health: int = 10
 @export var punch_damage: int = 1
-@export var punch_range: float = 1.6
+@export var punch_range: float = 1.9
 @export var punch_cooldown: float = 0.35
 @export var hurt_invulnerability: float = 0.6
 
 var health: int
+var speed_mult: float = 1.0
+var _base_max_health: int
+var _base_punch_damage: int
 var is_dead: bool = false
 var _punch_timer: float = 0.0
 var _hurt_timer: float = 0.0
@@ -30,6 +33,8 @@ var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 func _ready() -> void:
 	add_to_group("player")
+	_base_max_health = max_health
+	_base_punch_damage = punch_damage
 	health = max_health
 
 
@@ -47,8 +52,8 @@ func _physics_process(delta: float) -> void:
 	direction = direction.rotated(Vector3.UP, camera_rig.rotation.y)
 	visuals.set_walk_amount(direction.length())
 
-	velocity.x = direction.x * move_speed
-	velocity.z = direction.z * move_speed
+	velocity.x = direction.x * move_speed * speed_mult
+	velocity.z = direction.z * move_speed * speed_mult
 	if is_on_floor():
 		velocity.y = 0.0
 	else:
@@ -71,14 +76,14 @@ func _punch() -> void:
 	var facing := -visuals.global_transform.basis.z
 	facing.y = 0.0
 	facing = facing.normalized()
-	for node in get_tree().get_nodes_in_group("enemies"):
-		var enemy := node as Enemy
-		if enemy == null:
+	for node in get_tree().get_nodes_in_group("hittable"):
+		var thing := node as Node3D
+		if thing == null:
 			continue
-		var to_enemy := enemy.global_position - global_position
-		to_enemy.y = 0.0
-		if to_enemy.length() <= punch_range and facing.dot(to_enemy.normalized()) > 0.3:
-			enemy.take_damage(punch_damage, facing)
+		var to_thing := thing.global_position - global_position
+		to_thing.y = 0.0
+		if to_thing.length() <= punch_range and facing.dot(to_thing.normalized()) > 0.3:
+			thing.call("take_damage", punch_damage, facing)
 
 
 func take_damage(amount: int) -> void:
@@ -91,6 +96,18 @@ func take_damage(amount: int) -> void:
 	camera_rig.shake(0.6)
 	if health == 0:
 		die("enemies")
+
+
+## Recompute stats from equipped gear (see Inventory.bonuses()).
+func apply_bonuses(bonuses: Dictionary) -> void:
+	punch_damage = _base_punch_damage + int(bonuses.get("punch_damage", 0))
+	speed_mult = float(bonuses.get("speed_mult", 1.0))
+	var new_max := _base_max_health + int(bonuses.get("max_health", 0))
+	if new_max > max_health:
+		health += new_max - max_health
+	max_health = new_max
+	health = mini(health, max_health)
+	health_changed.emit(health, max_health)
 
 
 func heal(amount: int) -> void:
@@ -116,7 +133,7 @@ func reset_for_new_floor(spawn: Vector3) -> void:
 func _wants_punch() -> bool:
 	return Input.is_physical_key_pressed(KEY_SPACE) \
 		or Input.is_physical_key_pressed(KEY_J) \
-		or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+		or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 
 
 ## WASD or arrow keys. Returns x = right, y = toward the camera (+Z).

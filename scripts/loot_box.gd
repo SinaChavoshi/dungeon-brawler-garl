@@ -8,11 +8,14 @@ const CHEST := preload("res://assets/kaykit/dungeon/chest.glb")
 const CHEST_GOLD := preload("res://assets/kaykit/dungeon/chest_gold.glb")
 
 var tier: String = "Bronze"
+## Item id to give. Empty = the game rolls something.
+var contents: String = ""
 var _opened: bool = false
 var _model: Node3D
 
 
 func _ready() -> void:
+	add_to_group("loot")
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
 	box_shape.size = Vector3(1.6, 1.2, 1.6)
@@ -44,6 +47,7 @@ func _on_body_entered(body: Node3D) -> void:
 	if _opened or not (body is Player) or (body as Player).is_dead:
 		return
 	_opened = true
+	remove_from_group("loot")
 	opened.emit(self)
 	var lid := _model.find_child("*lid*", true, false) as Node3D
 	var tween := create_tween()
