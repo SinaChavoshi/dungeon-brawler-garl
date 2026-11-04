@@ -67,7 +67,7 @@ func _build() -> void:
 	_panel.offset_top = -230
 	_panel.offset_bottom = 230
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.03, 0.1, 0.95)
+	style.bg_color = Color(0.05, 0.03, 0.1, 1.0)
 	style.border_color = ACCENT
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(6)
@@ -98,7 +98,7 @@ func _build() -> void:
 	var left := VBoxContainer.new()
 	body.add_child(left)
 	left.add_child(_section("BAG (%d slots)" % Inventory.MAX_SLOTS))
-	_grid.columns = 4
+	_grid.columns = 2
 	_grid.add_theme_constant_override("h_separation", 6)
 	_grid.add_theme_constant_override("v_separation", 6)
 	left.add_child(_grid)
@@ -146,13 +146,14 @@ func _refresh() -> void:
 		child.queue_free()
 	for i in Inventory.MAX_SLOTS:
 		var slot := Button.new()
-		slot.custom_minimum_size = Vector2(108, 58)
-		slot.clip_text = true
-		slot.add_theme_font_size_override("font_size", 12)
+		slot.custom_minimum_size = Vector2(225, 30)
+		slot.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		slot.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		slot.add_theme_font_size_override("font_size", 13)
 		if i < inventory.items.size():
 			var entry: Dictionary = inventory.items[i]
 			var id: String = entry["id"]
-			slot.text = Items.display_name(id) + ("\nx%d" % entry["count"] if entry["count"] > 1 else "")
+			slot.text = Items.display_name(id) + ("  x%d" % entry["count"] if entry["count"] > 1 else "")
 			slot.tooltip_text = Items.display_name(id)
 			slot.pressed.connect(_select.bind(id))
 		else:
