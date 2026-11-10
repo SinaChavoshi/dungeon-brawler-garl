@@ -8,26 +8,38 @@
 
 [sub_resource type="Environment" id="Env_main"]
 background_mode = 1
-background_color = Color(0.03, 0.02, 0.05, 1)
+background_color = Color(0.01, 0.008, 0.015, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.45, 0.42, 0.6, 1)
-ambient_light_energy = 0.45
-tonemap_mode = 2
+ambient_light_color = Color(0.42, 0.4, 0.55, 1)
+ambient_light_energy = 0.22
+tonemap_mode = 3
+tonemap_exposure = 1.1
+tonemap_white = 6.0
+ssao_enabled = true
+ssao_radius = 1.4
+ssao_intensity = 2.2
+ssil_enabled = true
+glow_enabled = true
+glow_intensity = 0.7
+glow_bloom = 0.04
+glow_hdr_threshold = 0.9
 fog_enabled = true
-fog_light_color = Color(0.06, 0.04, 0.1, 1)
-fog_density = 0.012
+fog_light_color = Color(0.03, 0.025, 0.045, 1)
+fog_density = 0.008
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.03
+volumetric_fog_albedo = Color(0.75, 0.72, 0.8, 1)
+volumetric_fog_anisotropy = 0.35
+volumetric_fog_length = 48.0
+volumetric_fog_ambient_inject = 0.15
+adjustment_enabled = true
+adjustment_saturation = 1.1
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_game")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Env_main")
-
-[node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.642788, 0.766044, 0, -0.766044, 0.642788, 0, 10, 0)
-light_color = Color(0.7, 0.75, 1, 1)
-light_energy = 0.55
-shadow_enabled = true
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
 

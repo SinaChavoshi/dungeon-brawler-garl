@@ -46,6 +46,30 @@ jobs:
             exit 1
           fi
 
+      - name: Desktop (Forward+) screenshots on a software Vulkan driver
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mesa-vulkan-drivers xvfb >/dev/null
+          mkdir -p shots
+          timeout 900 xvfb-run -a -s "-screen 0 1280x720x24" \
+            godot --rendering-driver vulkan --resolution 1280x720 -- --screenshot="$PWD/shots" 2>&1 | tee desktop.log || true
+          for f in shots/*.jpg; do
+            [ -e "$f" ] || continue
+            echo "SCREENSHOT_BASE64_BEGIN desktop-$(basename "$f" .jpg)"
+            base64 -w 4000 "$f"
+            echo "SCREENSHOT_BASE64_END"
+          done
+          if grep -E "SCRIPT ERROR|SHADER ERROR|Parse Error|Failed to load" desktop.log; then
+            echo "::error::The desktop run reported errors (see above)"
+            exit 1
+          fi
+          ls shots/*.jpg >/dev/null 2>&1 || { echo "::error::No desktop screenshots were saved"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-screenshots
+          path: shots
+
       - name: Export web build
         run: |
           mkdir -p build/web

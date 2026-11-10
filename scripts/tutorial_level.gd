@@ -4,9 +4,9 @@ extends Level
 ## It opens into the Training Room: punch the dummies, survive the
 ## "live-fire portion", and the way down unlocks.
 ##
-## Layout (top-down, -Z is north):
-##   Training Room  x -14..14, z -20..0
-##   Tunnel         x  -2..2,  z   0..24  (Garl starts at the south end)
+## Layout (top-down, -Z is north), from tools/cave_gen.py level1():
+##   Training Room  a big cavern centred on (0, -10.5), about 28 x 21
+##   Tunnel         winds north from z 24 (Garl's start) to the cavern at z 0
 
 enum Stage { TUNNEL, DUMMIES, LIVE_FIRE, DONE }
 
@@ -19,45 +19,18 @@ var _live_enemies: int = 0
 
 func build() -> void:
 	time_limit = 300.0
-	player_spawn = Vector3(0.0, 0.1, 21.0)
 	intro_title = "FLOOR 1: THE TUNNEL"
 	intro_text = "Welcome, Crawler! You are live on Delve Live! This is the tutorial floor. It is mandatory. It is also televised."
+	load_cave("level1")
 
-	# --- Tunnel ---
-	floor_area(Rect2(-2.0, 0.0, 4.0, 24.0))
-	for i in 6:
-		var z := 2.0 + TILE * i
-		wall(Vector3(-2.5, 0.0, z), false, WALL_PILLAR if i % 2 == 1 else WALL)
-		wall(Vector3(2.5, 0.0, z), false, WALL_PILLAR if i % 2 == 0 else WALL)
-	wall(Vector3(0.0, 0.0, 24.5), true)
-	for i in [0, 2, 4]:
-		torch(Vector3(2.0, 2.2, 2.0 + TILE * i), -PI / 2.0)
-	for i in [1, 3, 5]:
-		torch(Vector3(-2.0, 2.2, 2.0 + TILE * i), PI / 2.0)
-	spawn_chest(Vector3(0.0, 0.0, 11.0), "Bronze", "brass_knuckles")
-
-	# --- Training Room ---
-	floor_area(Rect2(-14.0, -20.0, 28.0, 20.0))
-	for i in 7:
-		var x := -12.0 + TILE * i
-		wall(Vector3(x, 0.0, -20.5), true, WALL_PILLAR if i % 2 == 1 else WALL)
-		if i != 3:  # the tunnel comes in through the middle of the south wall
-			low_wall(Vector3(x, 0.0, 0.3), true)
-	for i in 5:
-		var z := -18.0 + TILE * i
-		wall(Vector3(-14.5, 0.0, z), false)
-		wall(Vector3(14.5, 0.0, z), false)
-	for x in [-8.0, 0.0, 8.0]:
-		torch(Vector3(x, 2.2, -20.0), 0.0)
-	for x in [-4.0, 4.0]:
-		banner(Vector3(x, 0.0, -20.5))
-	torch(Vector3(-14.0, 2.2, -10.0), PI / 2.0)
-	torch(Vector3(14.0, 2.2, -10.0), -PI / 2.0)
-	prop(Vector3(-12.0, 0.0, -18.0), 0)
-	prop(Vector3(12.0, 0.0, -18.0), 2)
-	prop(Vector3(-12.0, 0.0, -2.5), 3)
-	prop(Vector3(12.0, 0.0, -2.5), 1)
-	prop(Vector3(-12.5, 0.0, -10.0), 4)
+	spawn_chest(Vector3(0.2, 0.0, 11.0), "Bronze", "brass_knuckles")
+	# Training Room leftovers: the crew forgot to clean up.
+	prop(Vector3(-11.0, 0.0, -9.0), 0)
+	prop(Vector3(-10.0, 0.0, -14.0), 2)
+	prop(Vector3(10.0, 0.0, -8.0), 3)
+	prop(Vector3(-12.0, 0.0, -17.0), 1)
+	prop(Vector3(11.0, 0.0, -4.0), 2)
+	prop(Vector3(-3.0, 0.0, -19.0), 4)
 
 	for at in [Vector3(-6.0, 0.0, -9.0), Vector3(0.0, 0.0, -11.0), Vector3(6.0, 0.0, -9.0)]:
 		var dummy := TrainingDummy.new()

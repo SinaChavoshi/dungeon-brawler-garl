@@ -44,9 +44,45 @@ func _ready() -> void:
 	inventory_ui.equip_requested.connect(inventory.equip)
 	inventory_ui.unequip_requested.connect(inventory.unequip)
 
+	if not Level.high_quality():
+		# The web preview has no ambient occlusion or volumetric light, so
+		# lift the shadows a little to keep the cave readable.
+		var env := ($WorldEnvironment as WorldEnvironment).environment
+		env.ambient_light_energy = 0.4
+
 	_start_floor()
 	hud.notify("DUCHESS", "Garl, darling, the cameras are rolling. Do try to look heroic. And for heaven's sake, put on some pants.", DUCHESS_COLOR)
 	print("Game ready: floor %d, %d enemies" % [floor_number, get_tree().get_nodes_in_group("enemies").size()])
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--screenshot="):
+			_take_screenshots(arg.trim_prefix("--screenshot="))
+
+
+## For CI: walk the camera through the first floor and save a few pictures
+## (godot -- --screenshot=/some/dir), then quit.
+func _take_screenshots(folder: String) -> void:
+	DirAccess.make_dir_recursive_absolute(folder)
+	time_left = 9999.0
+	var shots := [
+		["spawn", Vector3(0.0, 0.3, 22.0), 13.0, -58.0],
+		["tunnel", Vector3(-0.8, 0.3, 11.5), 13.0, -58.0],
+		["tunnel_low", Vector3(0.6, 0.3, 16.0), 5.0, -18.0],
+		["cavern", Vector3(0.0, 0.3, -3.0), 15.0, -55.0],
+		["cavern_low", Vector3(0.0, 0.3, 0.5), 7.0, -16.0],
+	]
+	for shot in shots:
+		player.global_position = shot[1]
+		duchess.global_position = shot[1] + Vector3(1.2, 0.0, 1.0)
+		player.camera_rig.distance = shot[2]
+		player.camera_rig.pitch_degrees = shot[3]
+		player.camera_rig._apply()
+		for _frame in 45:
+			await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+		var path := folder.path_join("%s.jpg" % shot[0])
+		get_viewport().get_texture().get_image().save_jpg(path, 0.85)
+		print("Saved screenshot ", path)
+	get_tree().quit()
 
 
 func _process(delta: float) -> void:
