@@ -22,6 +22,9 @@ script = ExtResource("2_model")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 script = ExtResource("3_rig")
 
-[node name="Camera" type="Camera3D" parent="CameraRig"]
-fov = 50.0
+[node name="Arm" type="SpringArm3D" parent="CameraRig"]
+spring_length = 7.0
+
+[node name="Camera" type="Camera3D" parent="CameraRig/Arm"]
+fov = 60.0
 far = 200.0

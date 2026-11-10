@@ -11,6 +11,12 @@ const BLACK := Color(0.08, 0.08, 0.1)
 const WHITE := Color(0.95, 0.95, 0.95)
 const GOLD := Color(1.0, 0.8, 0.25)
 
+const COMMAND_QUIPS := [
+	"Duchess: Fine. But I'm billing you for this.",
+	"Duchess: Stand back, darling. This is art.",
+	"Duchess: You could have just asked nicely. Oh, you did. Hmm.",
+	"Duchess: For the cameras!",
+]
 const KILL_QUIPS := [
 	"Duchess: Another one bites the dust. Literally. They're made of dust.",
 	"Duchess: Garl, darling, you're welcome.",
@@ -84,6 +90,15 @@ func _physics_process(delta: float) -> void:
 		_face(move, delta)
 
 
+## Garl's "Command: Royal Spray": a big spray at his target, right now.
+func command_spray(target: Node3D) -> void:
+	var cloud := _spray(target)
+	cloud.damage = spray_damage + 2
+	if _quip_cooldown == 0.0:
+		_quip_cooldown = 6.0
+		quip.emit(COMMAND_QUIPS[randi() % COMMAND_QUIPS.size()])
+
+
 func on_enemy_killed() -> void:
 	if _quip_cooldown == 0.0 and randf() < 0.35:
 		_quip_cooldown = 12.0
@@ -104,7 +119,7 @@ func _nearest_enemy() -> Node3D:
 	return best
 
 
-func _spray(target: Node3D) -> void:
+func _spray(target: Node3D) -> RoyalSpray:
 	_spray_timer = spray_cooldown * (0.5 if boost_time > 0.0 else 1.0)
 	var cloud := RoyalSpray.new()
 	cloud.target = target
@@ -118,6 +133,7 @@ func _spray(target: Node3D) -> void:
 	if not _has_sprayed:
 		_has_sprayed = true
 		sprayed_first_time.emit()
+	return cloud
 
 
 func _face(direction: Vector3, delta: float) -> void:

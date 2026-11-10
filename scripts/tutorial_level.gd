@@ -47,7 +47,7 @@ func _process(delta: float) -> void:
 	var z := player.global_position.z
 	if _stage == Stage.TUNNEL:
 		if z < 18.0:
-			_say_once("move", "H.O.S.T.", "Tip: WASD to walk. Hold the right mouse button and drag to swivel the camera. The audience prefers your good side. You have one, probably.")
+			_say_once("move", "H.O.S.T.", "Tip: W to run, A and D to turn, Q and E to sidestep. Hold the right mouse button and drag to steer with the mouse, or the left button to look around. The audience prefers your good side. You have one, probably.")
 		if z < 13.0:
 			_say_once("chest", "H.O.S.T.", "Ooh, a loot box! Walk into it. Everything you find goes in your inventory. Press I to look inside and equip things.")
 		if z < 6.0:
@@ -55,7 +55,7 @@ func _process(delta: float) -> void:
 		if z < -1.0:
 			_stage = Stage.DUMMIES
 			announce.emit("NOW ENTERING: THE TRAINING ROOM",
-				"Punch the training dummies (left click, Space or J). They have signed waivers. Some of them even read them.")
+				"Press Tab to target a training dummy, then right-click it or press 1 for a Haymaker. They have signed waivers. Some of them even read them.")
 
 
 func _on_dummy_trained(_dummy: TrainingDummy) -> void:
