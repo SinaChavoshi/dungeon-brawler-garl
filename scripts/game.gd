@@ -35,6 +35,11 @@ func _ready() -> void:
 	hud.set_health(player.health, player.max_health)
 
 	duchess.leader = player
+	player.duchess = duchess
+	player.inventory_heal = _quick_heal
+	player.error.connect(hud.show_error)
+	player.ability_used.connect(hud.action_bar.flash)
+	_build_target_ring()
 	duchess.quip.connect(_on_duchess_quip)
 	duchess.sprayed_first_time.connect(_on_duchess_first_spray)
 
@@ -63,19 +68,20 @@ func _ready() -> void:
 func _take_screenshots(folder: String) -> void:
 	DirAccess.make_dir_recursive_absolute(folder)
 	time_left = 9999.0
+	# [name, Garl's position, camera yaw, distance, pitch]
 	var shots := [
-		["spawn", Vector3(0.0, 0.3, 22.0), 13.0, -58.0],
-		["tunnel", Vector3(-0.8, 0.3, 11.5), 13.0, -58.0],
-		["tunnel_low", Vector3(0.6, 0.3, 16.0), 5.0, -18.0],
-		["cavern", Vector3(0.0, 0.3, -3.0), 15.0, -55.0],
-		["cavern_low", Vector3(0.0, 0.3, 0.5), 7.0, -16.0],
+		["spawn", Vector3(0.0, 0.3, 22.0), 0.0, 7.0, -20.0],
+		["garl_closeup", Vector3(0.3, 0.3, 17.0), PI + 0.4, 3.2, -6.0],
+		["tunnel", Vector3(-0.8, 0.3, 11.5), 0.0, 6.0, -16.0],
+		["cavern", Vector3(0.0, 0.3, -2.0), 0.0, 9.0, -24.0],
+		["overview", Vector3(0.0, 0.3, -4.0), 0.0, 17.0, -62.0],
 	]
 	for shot in shots:
 		player.global_position = shot[1]
 		duchess.global_position = shot[1] + Vector3(1.2, 0.0, 1.0)
-		player.camera_rig.distance = shot[2]
-		player.camera_rig.pitch_degrees = shot[3]
-		player.camera_rig._apply()
+		player.camera_rig.snap(shot[2], shot[3], shot[4])
+		if shot[0] == "cavern":
+			player.target_nearest()  # show the target ring
 		for _frame in 45:
 			await get_tree().process_frame
 		await RenderingServer.frame_post_draw
@@ -100,6 +106,7 @@ func _process(delta: float) -> void:
 		player.die("collapse")
 	if level != null:
 		level.reveal_around(player.global_position, 7.0)
+	_update_target_ring()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -108,8 +115,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if key_event.physical_keycode == KEY_M:
 		hud.toggle_full_map()
-	elif key_event.physical_keycode == KEY_Q:
-		_quick_heal()
 
 
 func _start_floor() -> void:
@@ -135,6 +140,38 @@ func _start_floor() -> void:
 	hud.set_time(time_left)
 	hud.set_level(level, player)
 	hud.notify(level.intro_title, level.intro_text, Color(1.0, 0.6, 0.2), 7.0)
+
+
+var _target_ring: MeshInstance3D
+
+
+## A red ring on the floor under whatever Garl has targeted.
+func _build_target_ring() -> void:
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.75
+	torus.outer_radius = 0.9
+	torus.rings = 32
+	torus.ring_segments = 4
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(1.0, 0.2, 0.15)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.15, 0.1)
+	torus.material = mat
+	_target_ring = MeshInstance3D.new()
+	_target_ring.mesh = torus
+	_target_ring.scale = Vector3(1.0, 0.1, 1.0)
+	_target_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_target_ring.visible = false
+	add_child(_target_ring)
+
+
+func _update_target_ring() -> void:
+	var t := player.target
+	_target_ring.visible = t != null and is_instance_valid(t)
+	if _target_ring.visible:
+		_target_ring.global_position = t.global_position + Vector3(0.0, 0.06, 0.0)
+		_target_ring.rotation.y += get_process_delta_time() * 1.5
 
 
 func _award(id: String, text: String) -> void:
@@ -169,12 +206,18 @@ func _use_item(id: String) -> void:
 	hud.notify("ITEM USED", "%s. %s" % [Items.display_name(id), Items.effect_text(id)], LOOT_COLOR, 3.0)
 
 
-func _quick_heal() -> void:
+## Quick Heal ability: returns false if there was nothing to use.
+func _quick_heal() -> bool:
 	var id := inventory.best_heal()
 	if id == "":
+		player.error.emit("No healing items")
 		hud.notify("H.O.S.T.", "No healing items. H.O.S.T. suggests the classic strategy of 'not getting hit'.")
-		return
+		return false
+	if player.health >= player.max_health:
+		player.error.emit("Already at full health")
+		return false
 	_use_item(id)
+	return true
 
 
 func _on_chest_opened(box: LootBox) -> void:

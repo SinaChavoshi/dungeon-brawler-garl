@@ -9,6 +9,8 @@ signal enemy_died(enemy: Enemy)
 signal chest_opened(box: LootBox)
 signal announce(title: String, body: String)
 
+## Physics layer for rock and props (the camera's spring arm only hits these).
+const TERRAIN_LAYER := 8
 const MAP_CELL := 2.0
 const TILE := 4.0
 
@@ -112,6 +114,7 @@ func load_cave(cave_name: String) -> void:
 		var mi := mesh_instance as MeshInstance3D
 		mi.material_override = rock
 		var body := StaticBody3D.new()
+		body.collision_layer = 1 | TERRAIN_LAYER
 		var shape := CollisionShape3D.new()
 		shape.shape = mi.mesh.create_trimesh_shape()
 		body.add_child(shape)
@@ -289,6 +292,7 @@ func add_model(scene: PackedScene, at: Vector3, yaw: float) -> Node3D:
 
 func add_collider(size: Vector3, at: Vector3) -> void:
 	var body := StaticBody3D.new()
+	body.collision_layer = 1 | TERRAIN_LAYER
 	body.position = at
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()

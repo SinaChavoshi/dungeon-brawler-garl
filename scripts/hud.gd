@@ -6,6 +6,7 @@ extends CanvasLayer
 const HOST_COLOR := Color(1.0, 0.85, 0.3)
 
 var minimap := MapView.new()
+var action_bar := ActionBar.new()
 var full_map := MapView.new()
 
 var _stats := Label.new()
@@ -13,6 +14,8 @@ var _feed := VBoxContainer.new()
 var _center := Label.new()
 var _controls := Label.new()
 var _map_label := Label.new()
+var _error := Label.new()
+var _error_time: float = 0.0
 
 var _health: int = 0
 var _max_health: int = 0
@@ -54,12 +57,30 @@ func _ready() -> void:
 	_controls.anchor_top = 1.0
 	_controls.anchor_bottom = 1.0
 	_controls.offset_left = 16
-	_controls.offset_top = -92
+	_controls.offset_top = -120
 	_controls.offset_bottom = -10
-	_controls.add_theme_font_size_override("font_size", 14)
-	_controls.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
-	_controls.text = "WASD move · Left click / Space / J punch · Right-drag camera · Wheel zoom\nI inventory · Q quick heal · M map"
+	_controls.add_theme_font_size_override("font_size", 13)
+	_controls.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
+	_controls.text = "W/S run · A/D turn · Q/E strafe · Space jump\nRight-drag steer · Left-drag look · Wheel zoom\nClick or Tab to target · Right-click to attack\n1-6 abilities · I bags · M map"
 	add_child(_controls)
+
+	add_child(action_bar)
+
+	# Red error text above the action bar ("Out of range").
+	_error.anchor_left = 0.5
+	_error.anchor_right = 0.5
+	_error.anchor_top = 1.0
+	_error.anchor_bottom = 1.0
+	_error.offset_left = -300
+	_error.offset_right = 300
+	_error.offset_top = -150
+	_error.offset_bottom = -120
+	_error.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_error.add_theme_font_size_override("font_size", 20)
+	_error.add_theme_color_override("font_color", Color(1.0, 0.2, 0.15))
+	_error.add_theme_constant_override("outline_size", 6)
+	_error.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	add_child(_error)
 
 	# Minimap in the top-right corner.
 	minimap.anchor_left = 1.0
@@ -85,7 +106,18 @@ func _ready() -> void:
 	add_child(_map_label)
 
 
+func _process(delta: float) -> void:
+	_error_time = maxf(_error_time - delta, 0.0)
+	_error.modulate.a = clampf(_error_time, 0.0, 1.0)
+
+
+func show_error(text: String) -> void:
+	_error.text = text
+	_error_time = 2.0
+
+
 func set_level(level: Level, player: Player) -> void:
+	action_bar.player = player
 	for view in [minimap, full_map]:
 		view.level = level
 		view.player = player

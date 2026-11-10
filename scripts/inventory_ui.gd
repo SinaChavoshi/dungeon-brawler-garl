@@ -1,6 +1,6 @@
 class_name InventoryUI
 extends CanvasLayer
-## The inventory screen, "managed" by H.O.S.T. Press I or Tab to open.
+## The inventory screen, "managed" by H.O.S.T. Press I or B to open.
 ## Opening it pauses the game. Click an item to read H.O.S.T.'s notes on it,
 ## then use or equip it.
 
@@ -44,7 +44,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if key_event == null or not key_event.pressed or key_event.echo:
 		return
 	var key := key_event.physical_keycode
-	if key == KEY_I or key == KEY_TAB:
+	if key == KEY_I or key == KEY_B:
 		_toggle()
 		get_viewport().set_input_as_handled()
 	elif key == KEY_ESCAPE and _panel.visible:
@@ -124,7 +124,7 @@ func _build() -> void:
 	right.add_child(_action)
 
 	var footer := Label.new()
-	footer.text = "I / Tab / Esc to close  ·  The game is paused while you browse. H.O.S.T. is billing you for the time anyway."
+	footer.text = "I / B / Esc to close  ·  The game is paused while you browse. H.O.S.T. is billing you for the time anyway."
 	footer.add_theme_font_size_override("font_size", 13)
 	footer.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 	root.add_child(footer)
