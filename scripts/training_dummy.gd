@@ -8,6 +8,7 @@ signal trained(dummy: TrainingDummy)
 @export var hits_needed: int = 3
 
 var hits: int = 0
+var display_name: String = "Training Dummy"
 var _wobble: Node3D
 var _target_material := StandardMaterial3D.new()
 
@@ -43,6 +44,10 @@ func _ready() -> void:
 	_wobble.add_child(target)
 	var bullseye := _add(_wobble, _cylinder(0.08, 0.03), Color.WHITE, Vector3(0, 0.55, -0.38))
 	bullseye.rotation.x = PI / 2
+
+
+func health_fraction() -> float:
+	return clampf(1.0 - float(hits) / float(hits_needed), 0.0, 1.0)
 
 
 func take_damage(_amount: int, push_direction: Vector3) -> void:
