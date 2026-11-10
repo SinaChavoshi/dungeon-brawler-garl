@@ -162,6 +162,21 @@ func _build_tree() -> void:
 	_tree.anim_player = _tree.get_path_to(_anim)
 	_tree.tree_root = _root
 	_tree.active = true
+	# Transitions start with no current input until asked, so ask.
+	_tree.set("parameters/air/transition_request", "ground")
+	_tree.set("parameters/dead/transition_request", "alive")
+
+
+## One line about the animation state, for CI logs.
+func debug_state() -> String:
+	if _tree == null:
+		return "no AnimationTree (anim player: %s)" % _anim
+	var skeleton := _model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var arm := skeleton.find_bone("upperarm.l") if skeleton else -1
+	return "tree active=%s valid=%s loco=%s air=%s dead=%s arm_pose=%s arm_rest=%s" % [
+		_tree.active, _tree.tree_root != null, _tree.get("parameters/loco/blend_position"),
+		_tree.get("parameters/air/current_state"), _tree.get("parameters/dead/current_state"),
+		skeleton.get_bone_pose_rotation(arm) if arm >= 0 else "?", skeleton.get_bone_rest(arm).basis.get_rotation_quaternion() if arm >= 0 else "?"]
 
 
 func _clip(anim_name: String) -> AnimationNodeAnimation:
