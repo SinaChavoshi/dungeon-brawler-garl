@@ -21,6 +21,9 @@ signal target_changed(target: Node3D)
 ## Something went wrong with a button press ("Out of range", ...).
 signal error(text: String)
 signal ability_used(id: String)
+## An action bar key holding an item ("item:bandage") was pressed.
+signal use_item_requested(id: String)
+signal dealt_damage(thing: Node3D, amount: int)
 
 @export var move_speed: float = 6.5
 @export var backpedal_mult: float = 0.55
@@ -140,8 +143,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif key.physical_keycode >= KEY_1 and key.physical_keycode <= KEY_9:
 		var slot := int(key.physical_keycode - KEY_1)
-		if slot < action_bar.size() and action_bar[slot] != "":
-			use_ability(action_bar[slot])
+		var entry: String = action_bar[slot] if slot < action_bar.size() else ""
+		if entry.begins_with("item:"):
+			use_item_requested.emit(entry.trim_prefix("item:"))
+		elif entry != "":
+			use_ability(entry)
 
 
 # --- Targeting -------------------------------------------------------------
@@ -334,6 +340,7 @@ func _strike(thing: Node3D, damage: int, knockback: float) -> void:
 	var push := thing.global_position - global_position
 	push.y = 0.0
 	thing.call("take_damage", damage, push.normalized() * knockback)
+	dealt_damage.emit(thing, damage)
 
 
 func take_damage(amount: int) -> void:

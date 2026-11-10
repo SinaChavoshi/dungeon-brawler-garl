@@ -20,6 +20,7 @@ const LOOPING := ["Idle", "Running_A", "Walking_D_Skeletons", "Unarmed_Idle"]
 @export var attack_windup: float = 0.35
 
 var target: Player
+var display_name: String = "Skeleton Minion"
 var health: int
 var is_dead: bool = false
 var _attack_timer: float = 0.0
@@ -47,6 +48,7 @@ func _ready() -> void:
 	var which := randi() % MODELS.size()
 	if which == 1:
 		_attack_anim = "1H_Melee_Attack_Chop"
+		display_name = "Skeleton Warrior"
 	_model = (MODELS[which] as PackedScene).instantiate()
 	_model.scale = Vector3.ONE * 0.9
 	add_child(_model)
@@ -96,6 +98,10 @@ func _physics_process(delta: float) -> void:
 
 	velocity = Vector3(chase.x + _knockback.x, 0.0, chase.z + _knockback.z)
 	move_and_slide()
+
+
+func health_fraction() -> float:
+	return clampf(float(health) / float(max_health), 0.0, 1.0)
 
 
 func take_damage(amount: int, push_direction: Vector3) -> void:

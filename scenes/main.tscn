@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="3_hud"]
 [ext_resource type="Script" path="res://scripts/duchess.gd" id="4_duchess"]
-[ext_resource type="Script" path="res://scripts/inventory_ui.gd" id="5_inventory"]
+[ext_resource type="Script" path="res://scripts/game_ui.gd" id="5_ui"]
 
 [sub_resource type="Environment" id="Env_main"]
 background_mode = 1
@@ -49,5 +49,5 @@ script = ExtResource("4_duchess")
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("3_hud")
 
-[node name="InventoryUI" type="CanvasLayer" parent="."]
-script = ExtResource("5_inventory")
+[node name="GameUI" type="CanvasLayer" parent="."]
+script = ExtResource("5_ui")

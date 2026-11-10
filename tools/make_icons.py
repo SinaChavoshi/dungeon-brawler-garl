@@ -122,8 +122,161 @@ def quick_heal():
     finish(with_shadow(img, layer), "quick_heal")
 
 
+# --- Items -------------------------------------------------------------------
+
+def item(name, c1, c2, draw):
+    img = base(c1, c2)
+    layer, d = glyph_layer()
+    draw(d)
+    finish(with_shadow(img, layer), "item_" + name)
+
+
+def i_bandage(d):
+    d.rounded_rectangle([40, 95, 216, 161], radius=30, fill=(235, 220, 190, 255), outline=(120, 100, 70, 255), width=5)
+    d.rectangle([105, 95, 151, 161], fill=(250, 245, 235, 255))
+    for x in (115, 128, 141):
+        for y in (110, 128, 146):
+            d.ellipse([x - 3, y - 3, x + 3, y + 3], fill=(170, 150, 120, 255))
+    d.ellipse([60, 105, 85, 130], fill=(170, 40, 40, 200))
+
+
+def i_red_juice(d):
+    d.rectangle([108, 30, 148, 75], fill=(200, 230, 255, 220), outline=(80, 100, 120, 255), width=4)
+    d.rectangle([102, 22, 154, 36], fill=(140, 90, 50, 255))
+    d.ellipse([55, 70, 201, 216], fill=(210, 30, 50, 255), outline=(90, 10, 20, 255), width=6)
+    d.ellipse([85, 95, 120, 130], fill=(255, 160, 170, 200))
+
+
+def i_time_coupon(d):
+    d.polygon([(30, 70), (226, 70), (226, 186), (30, 186)], fill=(250, 230, 150, 255), outline=(150, 110, 30, 255))
+    for y in range(80, 186, 22):
+        d.ellipse([22, y, 38, y + 12], fill=(0, 0, 0, 0))
+    d.ellipse([90, 88, 166, 164], fill=(255, 255, 255, 255), outline=(60, 40, 10, 255), width=6)
+    d.line([128, 126, 128, 98], fill=(60, 40, 10, 255), width=7)
+    d.line([128, 126, 150, 136], fill=(60, 40, 10, 255), width=7)
+
+
+def i_skunk_treat(d):
+    d.rounded_rectangle([60, 80, 196, 176], radius=40, fill=(160, 100, 50, 255), outline=(80, 45, 15, 255), width=6)
+    for x, y in [(95, 110), (150, 105), (125, 145), (165, 150)]:
+        d.ellipse([x - 9, y - 9, x + 9, y + 9], fill=(90, 50, 20, 255))
+    d.polygon([(150, 40), (162, 70), (195, 72), (170, 92), (180, 124), (150, 106), (120, 124), (130, 92), (105, 72), (138, 70)],
+              fill=(255, 220, 60, 255))
+
+
+def i_fist_gear(color, spikes):
+    def draw(d):
+        fist(d, 55, 60, 0.95, color, (40, 30, 20, 255))
+        if spikes:
+            for i in range(4):
+                x = 55 + (40 + i * 28 + 13) * 0.95
+                d.polygon([(x - 10, 100), (x, 62), (x + 10, 100)], fill=(220, 220, 230, 255))
+        else:
+            d.rounded_rectangle([90, 95, 200, 125], radius=12, fill=(220, 180, 60, 255), outline=(110, 80, 10, 255), width=4)
+    return draw
+
+
+def i_sock(d):
+    d.polygon([(95, 30), (160, 30), (160, 160), (215, 180), (215, 222), (95, 222)], fill=(240, 240, 230, 255), outline=(90, 90, 90, 255))
+    for y in (50, 80, 110):
+        d.rectangle([95, y, 160, y + 14], fill=(60, 120, 230, 255))
+
+
+def i_belt(d):
+    d.rounded_rectangle([20, 100, 236, 156], radius=12, fill=(150, 60, 160, 255), outline=(60, 20, 70, 255), width=5)
+    d.rounded_rectangle([98, 90, 158, 166], radius=8, fill=(255, 215, 80, 255), outline=(120, 80, 10, 255), width=5)
+    for x, y in [(45, 112), (70, 140), (190, 115), (212, 140)]:
+        d.polygon([(x, y - 10), (x + 4, y), (x, y + 10), (x - 4, y)], fill=(255, 255, 255, 255))
+
+
+def i_party_hat(d):
+    d.polygon([(128, 25), (205, 215), (51, 215)], fill=(255, 90, 160, 255), outline=(120, 20, 70, 255))
+    for (x, y, c) in [(110, 120, (255, 230, 60)), (150, 160, (80, 200, 255)), (100, 185, (120, 255, 120)), (140, 85, (255, 255, 255))]:
+        d.ellipse([x - 10, y - 10, x + 10, y + 10], fill=c + (255,))
+    d.ellipse([113, 12, 143, 42], fill=(255, 230, 60, 255))
+
+
+def i_bone(d):
+    d.line([70, 186, 186, 70], fill=(235, 225, 200, 255), width=30)
+    for cx, cy in [(62, 172), (84, 196), (172, 62), (196, 84)]:
+        d.ellipse([cx - 22, cy - 22, cx + 22, cy + 22], fill=(235, 225, 200, 255))
+
+
+ITEMS = [
+    ("bandage", (230, 200, 160), (90, 60, 40), i_bandage),
+    ("red_juice", (255, 150, 150), (90, 10, 20), i_red_juice),
+    ("time_coupon", (130, 220, 255), (20, 60, 100), i_time_coupon),
+    ("skunk_treat", (255, 170, 230), (90, 20, 70), i_skunk_treat),
+    ("brass_knuckles", (200, 170, 110), (60, 40, 20), i_fist_gear((230, 190, 90, 255), False)),
+    ("spiked_mitts", (255, 120, 90), (80, 20, 10), i_fist_gear((250, 250, 245, 255), True)),
+    ("lonely_sock", (160, 210, 255), (20, 50, 100), i_sock),
+    ("utility_belt", (220, 160, 255), (60, 20, 90), i_belt),
+    ("party_hat", (255, 240, 140), (100, 70, 10), i_party_hat),
+    ("bone_fragment", (150, 150, 150), (40, 40, 40), i_bone),
+]
+
+
+# --- Portraits for the unit frames ----------------------------------------------
+
+def portrait(name, c1, c2, draw):
+    img = base(c1, c2)
+    layer, d = glyph_layer()
+    draw(d)
+    img = with_shadow(img, layer)
+    mask = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(mask).ellipse([0, 0, S - 1, S - 1], fill=255)
+    img.putalpha(mask)
+    img.resize((64, 64), Image.LANCZOS).save(os.path.join(OUT, "portrait_" + name + ".png"))
+
+
+def p_garl(d):
+    for side in (-1, 1):
+        d.line([128 + side * 40, 70, 128 + side * 70, 20], fill=(70, 150, 235, 255), width=10)
+        d.ellipse([128 + side * 70 - 16, 4, 128 + side * 70 + 16, 36], fill=(200, 255, 90, 255))
+    d.ellipse([48, 60, 208, 240], fill=(70, 150, 235, 255), outline=(30, 70, 150, 255), width=6)
+    for side in (-1, 1):
+        d.ellipse([128 + side * 38 - 30, 105, 128 + side * 38 + 30, 165], fill=(250, 250, 245, 255))
+        d.ellipse([128 + side * 34 - 13, 128, 128 + side * 34 + 13, 154], fill=(10, 10, 20, 255))
+    d.arc([95, 170, 161, 215], 20, 160, fill=(20, 40, 90, 255), width=7)
+
+
+def p_duchess(d):
+    d.ellipse([50, 70, 206, 230], fill=(30, 28, 34, 255))
+    d.polygon([(128, 70), (110, 230), (146, 230)], fill=(245, 245, 245, 255))
+    for side in (-1, 1):
+        d.polygon([(128 + side * 50, 95), (128 + side * 75, 40), (128 + side * 85, 110)], fill=(30, 28, 34, 255))
+        d.ellipse([128 + side * 38 - 13, 135, 128 + side * 38 + 13, 161], fill=(255, 200, 80, 255))
+    d.ellipse([116, 190, 140, 210], fill=(255, 130, 170, 255))
+    d.polygon([(95, 72), (110, 40), (128, 62), (146, 40), (161, 72)], fill=(255, 215, 60, 255))
+
+
+def p_skeleton(d):
+    d.ellipse([60, 50, 196, 190], fill=(235, 228, 210, 255))
+    d.rectangle([90, 170, 166, 225], fill=(235, 228, 210, 255))
+    for side in (-1, 1):
+        d.ellipse([128 + side * 33 - 24, 100, 128 + side * 33 + 24, 148], fill=(30, 20, 20, 255))
+    d.polygon([(128, 150), (118, 172), (138, 172)], fill=(30, 20, 20, 255))
+    for x in range(98, 166, 14):
+        d.line([x, 190, x, 222], fill=(120, 110, 100, 255), width=4)
+
+
+def p_dummy(d):
+    d.ellipse([60, 40, 196, 176], fill=(195, 165, 110, 255), outline=(110, 85, 50, 255), width=6)
+    d.rectangle([116, 170, 140, 240], fill=(115, 75, 45, 255))
+    for r, c in [(40, (220, 40, 40)), (26, (255, 255, 255)), (12, (220, 40, 40))]:
+        d.ellipse([128 - r, 108 - r, 128 + r, 108 + r], fill=c + (255,))
+
+
 if __name__ == "__main__":
+    for name, c1, c2, draw in [("garl", (120, 200, 255), (20, 50, 100), p_garl),
+                               ("duchess", (255, 170, 220), (90, 20, 70), p_duchess),
+                               ("skeleton", (200, 120, 100), (60, 10, 10), p_skeleton),
+                               ("dummy", (200, 220, 160), (50, 70, 30), p_dummy)]:
+        os.makedirs(OUT, exist_ok=True)
+        portrait(name, c1, c2, draw)
     os.makedirs(OUT, exist_ok=True)
     for make in (haymaker, boot, belly_flop, dodge, royal_spray, quick_heal):
         make()
+    for name, c1, c2, draw in ITEMS:
+        item(name, c1, c2, draw)
     print("icons written to", os.path.abspath(OUT))

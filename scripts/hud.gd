@@ -6,7 +6,7 @@ extends CanvasLayer
 const HOST_COLOR := Color(1.0, 0.85, 0.3)
 
 var minimap := MapView.new()
-var action_bar := ActionBar.new()
+var unit_frames := UnitFrames.new()
 var full_map := MapView.new()
 
 var _stats := Label.new()
@@ -25,8 +25,16 @@ var _gold: int = 0
 
 
 func _ready() -> void:
-	_stats.position = Vector2(16, 12)
-	_stats.add_theme_font_size_override("font_size", 22)
+	add_child(unit_frames)
+
+	# Floor, collapse timer and gold, under the minimap.
+	_stats.anchor_left = 1.0
+	_stats.anchor_right = 1.0
+	_stats.offset_left = -196
+	_stats.offset_right = -16
+	_stats.offset_top = 200
+	_stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_stats.add_theme_font_size_override("font_size", 15)
 	_stats.add_theme_constant_override("outline_size", 6)
 	_stats.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	add_child(_stats)
@@ -36,7 +44,7 @@ func _ready() -> void:
 	_feed.anchor_right = 0.5
 	_feed.offset_left = -270
 	_feed.offset_right = 270
-	_feed.offset_top = 12
+	_feed.offset_top = 92  # below the unit frames
 	_feed.add_theme_constant_override("separation", 6)
 	_feed.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_feed)
@@ -61,10 +69,8 @@ func _ready() -> void:
 	_controls.offset_bottom = -10
 	_controls.add_theme_font_size_override("font_size", 13)
 	_controls.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
-	_controls.text = "W/S run · A/D turn · Q/E strafe · Space jump\nRight-drag steer · Left-drag look · Wheel zoom\nClick or Tab to target · Right-click to attack\n1-6 abilities · I bags · M map"
+	_controls.text = "W/S run · A/D turn · Q/E strafe · Space jump\nRight-drag steer · Left-drag look · Wheel zoom\nClick or Tab to target · Right-click to attack\n1-6 abilities · B bags · C character · P spellbook · M map"
 	add_child(_controls)
-
-	add_child(action_bar)
 
 	# Red error text above the action bar ("Out of range").
 	_error.anchor_left = 0.5
@@ -117,7 +123,7 @@ func show_error(text: String) -> void:
 
 
 func set_level(level: Level, player: Player) -> void:
-	action_bar.player = player
+	unit_frames.player = player
 	for view in [minimap, full_map]:
 		view.level = level
 		view.player = player
@@ -206,5 +212,5 @@ func show_center(text: String) -> void:
 func _refresh() -> void:
 	var seconds := int(ceil(_time_left))
 	var minutes := floori(seconds / 60.0)
-	_stats.text = "HP %d / %d\nFloor %d\nCollapse in %d:%02d\nGold %d" % [
-		_health, _max_health, _floor, minutes, seconds % 60, _gold]
+	_stats.text = "Floor %d  ·  Collapse in %d:%02d\n%d gold" % [_floor, minutes, seconds % 60, _gold]
+	_stats.add_theme_color_override("font_color", Color(1.0, 0.45, 0.35) if _time_left < 30.0 else Color.WHITE)

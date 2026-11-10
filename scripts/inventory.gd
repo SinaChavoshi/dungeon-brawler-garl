@@ -4,44 +4,65 @@ extends RefCounted
 
 signal changed
 
-const MAX_SLOTS := 12
+const MAX_SLOTS := 16
 
-## Each entry: {"id": String, "count": int}
-var items: Array[Dictionary] = []
-## slot name -> item id
+## One entry per bag slot: null (empty) or {"id": String, "count": int}.
+var slots: Array = []
+## gear slot name -> item id
 var equipped: Dictionary = {}
 var gold: int = 0
 
 
+func _init() -> void:
+	slots.resize(MAX_SLOTS)
+
+
+## Stacks onto a matching item, or takes the first empty slot.
 ## Returns false if the bag is full.
 func add(id: String, count: int = 1) -> bool:
-	for entry in items:
-		if entry["id"] == id:
+	for entry in slots:
+		if entry != null and entry["id"] == id:
 			entry["count"] += count
 			changed.emit()
 			return true
-	if items.size() >= MAX_SLOTS:
+	var empty := slots.find(null)
+	if empty < 0:
 		return false
-	items.append({"id": id, "count": count})
+	slots[empty] = {"id": id, "count": count}
 	changed.emit()
 	return true
 
 
 func remove(id: String, count: int = 1) -> void:
-	for i in items.size():
-		if items[i]["id"] == id:
-			items[i]["count"] -= count
-			if items[i]["count"] <= 0:
-				items.remove_at(i)
+	for i in slots.size():
+		if slots[i] != null and slots[i]["id"] == id:
+			slots[i]["count"] -= count
+			if slots[i]["count"] <= 0:
+				slots[i] = null
 			changed.emit()
 			return
 
 
 func count_of(id: String) -> int:
-	for entry in items:
-		if entry["id"] == id:
-			return entry["count"]
-	return 0
+	var total := 0
+	for entry in slots:
+		if entry != null and entry["id"] == id:
+			total += entry["count"]
+	return total
+
+
+func id_at(index: int) -> String:
+	return slots[index]["id"] if slots[index] != null else ""
+
+
+## Drag and drop inside the bag: swap two slots.
+func move(from: int, to: int) -> void:
+	if from == to:
+		return
+	var moving = slots[from]
+	slots[from] = slots[to]
+	slots[to] = moving
+	changed.emit()
 
 
 func add_gold(amount: int) -> void:
@@ -49,25 +70,42 @@ func add_gold(amount: int) -> void:
 	changed.emit()
 
 
-## Moves an item from the bag into its slot, swapping out whatever was there.
+## Moves an item from the bag into its gear slot. Whatever was there goes
+## back into the bag (into the same bag slot, if there is one).
 func equip(id: String) -> void:
 	var item := Items.info(id)
 	if item.get("kind", "") != "equipment" or count_of(id) == 0:
 		return
-	var slot: String = item["slot"]
-	remove(id)
-	if equipped.has(slot):
-		add(equipped[slot])
-	equipped[slot] = id
+	var gear_slot: String = item["slot"]
+	var from := -1
+	for i in slots.size():
+		if slots[i] != null and slots[i]["id"] == id:
+			from = i
+			break
+	slots[from]["count"] -= 1
+	if slots[from]["count"] <= 0:
+		slots[from] = null
+	if equipped.has(gear_slot):
+		var old: String = equipped[gear_slot]
+		if slots[from] == null:
+			slots[from] = {"id": old, "count": 1}
+		else:
+			add(old)
+	equipped[gear_slot] = id
 	changed.emit()
 
 
-func unequip(slot: String) -> void:
-	if not equipped.has(slot):
+## Takes gear off into the bag (into bag slot `to` if it's free).
+func unequip(gear_slot: String, to: int = -1) -> void:
+	if not equipped.has(gear_slot):
 		return
-	if add(equipped[slot]):
-		equipped.erase(slot)
-		changed.emit()
+	var id: String = equipped[gear_slot]
+	if to >= 0 and slots[to] == null:
+		slots[to] = {"id": id, "count": 1}
+	elif not add(id):
+		return
+	equipped.erase(gear_slot)
+	changed.emit()
 
 
 ## Sum of all equipped bonuses.
@@ -85,7 +123,9 @@ func bonuses() -> Dictionary:
 func best_heal() -> String:
 	var best := ""
 	var best_heal_amount := 0
-	for entry in items:
+	for entry in slots:
+		if entry == null:
+			continue
 		var heal: int = Items.info(entry["id"]).get("heal", 0)
 		if heal > best_heal_amount:
 			best = entry["id"]

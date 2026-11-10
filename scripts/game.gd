@@ -24,7 +24,7 @@ var _warned_time: bool = false
 @onready var player: Player = $Player
 @onready var duchess: Duchess = $Duchess
 @onready var hud: Hud = $HUD
-@onready var inventory_ui: InventoryUI = $InventoryUI
+@onready var game_ui: GameUI = $GameUI
 
 
 func _ready() -> void:
@@ -38,16 +38,14 @@ func _ready() -> void:
 	player.duchess = duchess
 	player.inventory_heal = _quick_heal
 	player.error.connect(hud.show_error)
-	player.ability_used.connect(hud.action_bar.flash)
+	player.dealt_damage.connect(_on_dealt_damage)
 	_build_target_ring()
 	duchess.quip.connect(_on_duchess_quip)
 	duchess.sprayed_first_time.connect(_on_duchess_first_spray)
 
 	inventory.changed.connect(_on_inventory_changed)
-	inventory_ui.setup(inventory)
-	inventory_ui.use_requested.connect(_use_item)
-	inventory_ui.equip_requested.connect(inventory.equip)
-	inventory_ui.unequip_requested.connect(inventory.unequip)
+	game_ui.setup(inventory, player)
+	game_ui.use_requested.connect(_use_item)
 
 	if not Level.high_quality():
 		# The web preview has no ambient occlusion or volumetric light, so
@@ -75,6 +73,7 @@ func _take_screenshots(folder: String) -> void:
 		["tunnel", Vector3(-0.8, 0.3, 11.5), 0.0, 6.0, -16.0],
 		["cavern", Vector3(0.0, 0.3, -2.0), 0.0, 9.0, -24.0],
 		["overview", Vector3(0.0, 0.3, -4.0), 0.0, 17.0, -62.0],
+		["ui", Vector3(0.0, 0.3, -3.0), 0.0, 8.0, -22.0],
 	]
 	for shot in shots:
 		player.global_position = shot[1]
@@ -82,6 +81,16 @@ func _take_screenshots(folder: String) -> void:
 		player.camera_rig.snap(shot[2], shot[3], shot[4])
 		if shot[0] == "cavern":
 			player.target_nearest()  # show the target ring
+		if shot[0] == "ui":
+			for id in ["bandage", "bandage", "red_juice", "party_hat", "lonely_sock", "bone_fragment"]:
+				inventory.add(id)
+			inventory.add("spiked_mitts")
+			inventory.equip("spiked_mitts")
+			player.action_bar[6] = "item:bandage"
+			game_ui._toggle(game_ui._bags)
+			game_ui._toggle(game_ui._character)
+			game_ui._toggle(game_ui._spellbook)
+			hud.unit_frames.pop_number(player.global_position + Vector3(0, 0, -3), "3", Color(1.0, 0.85, 0.2))
 		for _frame in 45:
 			await get_tree().process_frame
 		await RenderingServer.frame_post_draw
@@ -235,7 +244,7 @@ func _on_chest_opened(box: LootBox) -> void:
 	hud.notify("%s BOX OPENED" % box.tier.to_upper(),
 		"You received: %s (+%d gold).\n%s" % [Items.display_name(id), gold, Items.info(id).get("desc", "")], LOOT_COLOR, 7.0)
 	if Items.info(id).get("kind", "") == "equipment" and not inventory.equipped.has(Items.info(id)["slot"]):
-		hud.notify("H.O.S.T.", "Tip: press I to open your inventory and equip that. Or don't. It's your funeral, and it's televised.")
+		hud.notify("H.O.S.T.", "Tip: press B to open your bags, then right-click it to put it on. Or don't. It's your funeral, and it's televised.")
 
 
 # --- Events ----------------------------------------------------------------
@@ -249,6 +258,10 @@ func _on_enemy_died(_enemy: Enemy) -> void:
 	_award("first_kill", "First Blood (Not Yours). You destroyed a skeleton. It was already dead, so legally this is fine.")
 	if kills == 10:
 		_award("ten_kills", "Knuckle Sandwich Franchise. Ten skeletons served.")
+
+
+func _on_dealt_damage(thing: Node3D, amount: int) -> void:
+	hud.unit_frames.pop_number(thing.global_position, str(amount), Color(1.0, 0.85, 0.2))
 
 
 func _on_level_announce(title: String, body: String) -> void:
