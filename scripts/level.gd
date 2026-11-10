@@ -90,7 +90,8 @@ func is_revealed(pos: Vector3) -> bool:
 ## True on desktop (Forward+). The web preview runs the lighter renderer,
 ## so it skips the expensive extras like torch shadows.
 static func high_quality() -> bool:
-	return RenderingServer.get_current_rendering_method() == "forward_plus"
+	# Only the Forward+ / Mobile renderers have a RenderingDevice.
+	return RenderingServer.get_rendering_device() != null
 
 
 ## Loads a generated cave (see tools/cave_gen.py): the rock mesh with its
