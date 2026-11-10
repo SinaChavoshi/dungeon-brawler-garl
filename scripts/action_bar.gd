@@ -14,10 +14,14 @@ var _flash: Dictionary = {}
 var _tooltip := PanelContainer.new()
 var _tooltip_text := RichTextLabel.new()
 var _hover: int = -1
+## Icons are loaded up front: textures first loaded inside _draw() come out blank.
+var _icons: Dictionary = {}
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for id in Abilities.DATA:
+		_icons[id] = load(Abilities.info(id)["icon"])
 	var count := 9
 	var width := count * SLOT + (count - 1) * GAP
 	anchor_left = 0.5
@@ -77,7 +81,7 @@ func _draw() -> void:
 		var id: String = player.action_bar[i] if i < player.action_bar.size() else ""
 		if id != "":
 			var info := Abilities.info(id)
-			var icon := load(info["icon"]) as Texture2D
+			var icon := _icons.get(id) as Texture2D
 			if icon != null:
 				draw_texture_rect(icon, rect, false)
 			var left: float = player.cooldowns.get(id, 0.0)

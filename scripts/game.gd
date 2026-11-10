@@ -89,9 +89,6 @@ func _take_screenshots(folder: String) -> void:
 		get_viewport().get_texture().get_image().save_jpg(path, 0.85)
 		print("Saved screenshot ", path)
 		print("  Garl animation: ", player.visuals.debug_state())
-		var icon := load("res://assets/icons/haymaker.png") as Texture2D
-		if icon != null:
-			print("  Icon: ", icon.get_class(), " ", icon.get_size(), " centre pixel ", icon.get_image().get_pixel(32, 32))
 	get_tree().quit()
 
 
