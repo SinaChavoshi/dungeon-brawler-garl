@@ -46,7 +46,7 @@ func _draw() -> void:
 
 	_frame(Vector2(16, 14), "Garl", "Level 1 Crawler", PORTRAITS["garl"],
 		float(player.health) / float(maxi(player.max_health, 1)), "%d / %d" % [player.health, player.max_health], FRIENDLY)
-	_frame(Vector2(16, 14 + FRAME.y + 10), "Duchess Pumpernickel III", "Companion", PORTRAITS["duchess"],
+	_frame(Vector2(16, 14 + FRAME.y + 10), "Duchess", "Pumpernickel III, companion", PORTRAITS["duchess"],
 		1.0, "Diva", Color(0.85, 0.35, 0.7), 0.82)
 	var t := player.target
 	if t != null and is_instance_valid(t):

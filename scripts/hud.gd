@@ -44,7 +44,7 @@ func _ready() -> void:
 	_feed.anchor_right = 0.5
 	_feed.offset_left = -270
 	_feed.offset_right = 270
-	_feed.offset_top = 12
+	_feed.offset_top = 92  # below the unit frames
 	_feed.add_theme_constant_override("separation", 6)
 	_feed.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_feed)
